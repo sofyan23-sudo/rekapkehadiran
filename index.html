@@ -78,7 +78,7 @@
             <input type="date" id="tanggal" name="Tanggal" required>
 
             <label for="bulan">Bulan:</label>
-            <select id="bulan" name="Bulan (Januari/Februari/Maret/April/Mei/Juni/Juli/Agustus/September/Oktober/November/Desember)" required>
+            <select id="bulan" name="Bulan" required>
                 <option value="">Pilih Bulan</option>
                 <option value="Januari">Januari</option>
                 <option value="Februari">Februari</option>
@@ -92,7 +92,8 @@
                 <option value="Oktober">Oktober</option>
                 <option value="November">November</option>
                 <option value="Desember">Desember</option>
-                
+            </select>
+
             <label for="kelas">Kelas:</label>
             <select id="kelas" name="Kelas (X/XI/XII)" required>
                 <option value="">Pilih Kelas</option>
@@ -102,7 +103,7 @@
             </select>
 
             <label for="komli">Komli:</label>
-            <select id="komli" name="Komli (NKPI1/NKPI2/APHPi1/APHPi2/TJKT1/TJKT2/TJKT3/PPLG1/PPLG2/TAB1/TAB2/TAB3/KULINER1/KULINER2/KULINER3/AP/TP1/1P2)" required>
+            <select id="komli" name="Komli" required>
                 <option value="">Pilih Komli</option>
                 <option value="NKPI1">NKPI1</option>
                 <option value="NKPI2">NKPI2</option>
@@ -150,7 +151,7 @@
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            messageDiv.style.display = 'none'; // Hide previous messages
+            messageDiv.style.display = 'none'; // Sembunyikan pesan sebelumnya
 
             const formData = new FormData(form);
             const data = {};
@@ -158,28 +159,38 @@
                 data[key] = value;
             }
 
-            // Get current timestamp
+            // Dapatkan timestamp saat ini
             const now = new Date();
-            data['Timestamp'] = now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }); // Adjust timezone if needed
+            // Gunakan format lokal yang konsisten dengan "Timestamp" di Google Sheet.
+            // Pastikan zona waktu sesuai. Untuk WIB, bisa gunakan 'Asia/Jakarta'.
+            data['Timestamp'] = now.toLocaleString('en-US', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false, // Gunakan format 24 jam
+                timeZone: 'Asia/Jakarta'
+            }).replace(',', ''); // Hapus koma di antara tanggal dan waktu
 
-            // Replace with your deployed Google Apps Script Web App URL
-            // IMPORTANT: You will get this URL after deploying your gs.code.
-            const scriptUrl = 'https://script.google.com/macros/s/AKfycbwCPbG-iMu3NMOXP7ZNs7SsrVOf46tKojUyKwvrT8gjVCzRkZxPiMlrI47wZeE19ILd/exec';
+            // Ganti dengan URL Web App Google Apps Script Anda
+            const scriptUrl = 'https://script.google.com/macros/s/AKfycbyLziZ2Fy4nzgJo3D7PnE59InrPwwhBd6NjmUMGFSWW8dS-khPQWi1Y3NA454RUwTNM/exec';
 
             try {
                 const response = await fetch(scriptUrl, {
                     method: 'POST',
-                    mode: 'no-cors', // Required for simple requests to Apps Script
+                    mode: 'no-cors',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                     },
                     body: new URLSearchParams(data).toString()
                 });
 
-                // Since we're using 'no-cors', we can't directly read the response status/body.
-                // We'll assume success if no error is thrown by fetch.
                 showMessage('Data berhasil dikirim!', 'success');
-                form.reset(); // Clear the form
+                form.reset(); // Kosongkan form
+                // Set default date dan month kembali setelah reset
+                setInitialValues();
             } catch (error) {
                 console.error('Error:', error);
                 showMessage('Terjadi kesalahan saat mengirim data. Mohon coba lagi.', 'error');
@@ -192,14 +203,20 @@
             messageDiv.style.display = 'block';
         }
 
-        // Set default date to today
-        document.addEventListener('DOMContentLoaded', () => {
+        // Fungsi untuk mengatur nilai awal tanggal dan bulan
+        function setInitialValues() {
             const today = new Date();
             const yyyy = today.getFullYear();
-            const mm = String(today.getMonth() + 1).padStart(2, '0'); // Months start at 0!
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
             const dd = String(today.getDate()).padStart(2, '0');
             document.getElementById('tanggal').value = `${yyyy}-${mm}-${dd}`;
-        });
+
+            const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            document.getElementById('bulan').value = months[today.getMonth()];
+        }
+
+        // Panggil fungsi saat DOM selesai dimuat
+        document.addEventListener('DOMContentLoaded', setInitialValues);
     </script>
 </body>
 </html>
